@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost IDE - Embedded AI Development Platform</title>
+    <link rel="stylesheet" href="./styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/lint/lint.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Title Bar -->
+        <div id="titlebar" class="titlebar">
+            <div class="titlebar-left">
+                <div class="app-icon">
+                    <i class="fas fa-ghost"></i>
+                </div>
+                <div class="window-title" id="windowTitle">Ghost IDE</div>
+                <div class="file-path" id="filePath"></div>
+            </div>
+            <div class="titlebar-center">
+                <div class="tab-bar" id="tabBar">
+                    <div class="tab new-tab" id="newTabBtn" title="New File (Ctrl+N)">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="titlebar-right">
+                <div class="target-selector">
+                    <label for="targetSelect"><i class="fas fa-microchip"></i></label>
+                    <select id="targetSelect" title="Target Device">
+                        <option value="stm32f411">STM32F411 (Cortex-M4)</option>
+                        <option value="esp32s3">ESP32-S3 (Xtensa LX7)</option>
+                        <option value="esp32">ESP32 (Xtensa LX6)</option>
+                        <option value="esp32c3">ESP32-C3 (RISC-V)</option>
+                    </select>
+                </div>
+                <div class="ghost-status" id="ghostStatus" title="Ghost Compiler Status">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="statusText">Ready</span>
+                </div>
+                <div class="window-controls">
+                    <button class="win-btn" id="minimizeBtn" title="Minimize">
+                        <i class="fas fa-window-minimize"></i>
+                    </button>
+                    <button class="win-btn" id="maximizeBtn" title="Maximize">
+                        <i class="fas fa-window-maximize"></i>
+                    </button>
+                    <button class="win-btn close" id="closeBtn" title="Close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Bar -->
+        <div id="menuBar" class="menu-bar">
+            <div class="menu-item" data-menu="fileMenu">
+                <i class="fas fa-file"></i> File
+            </div>
+            <div class="menu-item" data-menu="editMenu">
+                <i class="fas fa-edit"></i> Edit
+            </div>
+            <div class="menu-item" data-menu="selectionMenu">
+                <i class="fas fa-mouse-pointer"></i> Selection
+            </div>
+            <div class="menu-item" data-menu="viewMenu">
+                <i class="fas fa-eye"></i> View
+            </div>
+            <div class="menu-item" data-menu="ghostMenu">
+                <i class="fas fa-ghost"></i> Ghost
+            </div>
+            <div class="menu-item" data-menu="terminalMenu">
+                <i class="fas fa-terminal"></i> Terminal
+            </div>
+            <div class="menu-item" data-menu="helpMenu">
+                <i class="fas fa-question-circle"></i> Help
+            </div>
+        </div>
+
+        <!-- Dropdown Menus -->
+        <div class="dropdown-menu" id="fileMenu">
+            <div class="menu-header">File</div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="new-file">
+                <i class="fas fa-file"></i> New File <span class="shortcut">Ctrl+N</span>
+            </div>
+            <div class="menu-item-action" data-action="open-file">
+                <i class="fas fa-folder-open"></i> Open File... <span class="shortcut">Ctrl+O</span>
+            </div>
+            <div class="menu-item-action" data-action="open-folder">
+                <i class="fas fa-folder"></i> Open Folder... <span class="shortcut">Ctrl+K Ctrl+O</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="save">
+                <i class="fas fa-save"></i> Save <span class="shortcut">Ctrl+S</span>
+            </div>
+            <div class="menu-item-action" data-action="save-as">
+                <i class="fas fa-file-export"></i> Save As... <span class="shortcut">Ctrl+Shift+S</span>
+            </div>
+            <div class="menu-item-action" data-action="save-all">
+                <i class="fas fa-save"></i> Save All <span class="shortcut">Ctrl+K S</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="new-project">
+                <i class="fas fa-project-diagram"></i> New Project... <span class="shortcut">Ctrl+Shift+N</span>
+            </div>
+            <div class="menu-item-action" data-action="open-project">
+                <i class="fas fa-folder-open"></i> Open Project... <span class="shortcut">Ctrl+Shift+O</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-section-title">Recent Projects</div>
+            <div class="recent-projects" id="recentProjectsMenu"></div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="close-folder">
+                <i class="fas fa-times-circle"></i> Close Folder
+            </div>
+            <div class="menu-item-action" data-action="close-editor">
+                <i class="fas fa-window-close"></i> Close Editor <span class="shortcut">Ctrl+W</span>
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="editMenu">
+            <div class="menu-header">Edit</div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="undo">
+                <i class="fas fa-undo"></i> Undo <span class="shortcut">Ctrl+Z</span>
+            </div>
+            <div class="menu-item-action" data-action="redo">
+                <i class="fas fa-redo"></i> Redo <span class="shortcut">Ctrl+Y</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="cut">
+                <i class="fas fa-cut"></i> Cut <span class="shortcut">Ctrl+X</span>
+            </div>
+            <div class="menu-item-action" data-action="copy">
+                <i class="fas fa-copy"></i> Copy <span class="shortcut">Ctrl+C</span>
+            </div>
+            <div class="menu-item-action" data-action="paste">
+                <i class="fas fa-paste"></i> Paste <span class="shortcut">Ctrl+V</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="find">
+                <i class="fas fa-search"></i> Find <span class="shortcut">Ctrl+F</span>
+            </div>
+            <div class="menu-item-action" data-action="replace">
+                <i class="fas fa-exchange-alt"></i> Replace <span class="shortcut">Ctrl+H</span>
+            </div>
+            <div class="menu-item-action" data-action="find-in-files">
+                <i class="fas fa-search"></i> Find in Files <span class="shortcut">Ctrl+Shift+F</span>
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="selectionMenu">
+            <div class="menu-header">Selection</div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="select-all">
+                <i class="fas fa-mouse-pointer"></i> Select All <span class="shortcut">Ctrl+A</span>
+            </div>
+            <div class="menu-item-action" data-action="expand-selection">
+                <i class="fas fa-expand"></i> Expand Selection <span class="shortcut">Shift+Alt+Right</span>
+            </div>
+            <div class="menu-item-action" data-action="shrink-selection">
+                <i class="fas fa-compress"></i> Shrink Selection <span class="shortcut">Shift+Alt+Left</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="add-cursor-above">
+                <i class="fas fa-arrow-up"></i> Add Cursor Above <span class="shortcut">Ctrl+Alt+Up</span>
+            </div>
+            <div class="menu-item-action" data-action="add-cursor-below">
+                <i class="fas fa-arrow-down"></i> Add Cursor Below <span class="shortcut">Ctrl+Alt+Down</span>
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="viewMenu">
+            <div class="menu-header">View</div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="toggle-sidebar">
+                <i class="fas fa-sidebar"></i> Toggle Sidebar <span class="shortcut">Ctrl+B</span>
+            </div>
+            <div class="menu-item-action" data-action="toggle-panel">
+                <i class="fas fa-window-restore"></i> Toggle Panel <span class="shortcut">Ctrl+J</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-section-title">Panels</div>
+            <div class="menu-item-action" data-action="show-explorer">
+                <i class="fas fa-file-alt"></i> Explorer <span class="shortcut">Ctrl+Shift+E</span>
+            </div>
+            <div class="menu-item-action" data-action="show-search">
+                <i class="fas fa-search"></i> Search <span class="shortcut">Ctrl+Shift+F</span>
+            </div>
+            <div class="menu-item-action" data-action="show-git">
+                <i class="fab fa-git-alt"></i> Source Control <span class="shortcut">Ctrl+Shift+G</span>
+            </div>
+            <div class="menu-item-action" data-action="show-debug">
+                <i class="fas fa-bug"></i> Run and Debug <span class="shortcut">Ctrl+Shift+D</span>
+            </div>
+            <div class="menu-item-action" data-action="show-extensions">
+                <i class="fas fa-puzzle-piece"></i> Extensions <span class="shortcut">Ctrl+Shift+X</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="show-terminal">
+                <i class="fas fa-terminal"></i> Terminal <span class="shortcut">Ctrl+`</span>
+            </div>
+            <div class="menu-item-action" data-action="show-output">
+                <i class="fas fa-window-restore"></i> Output
+            </div>
+            <div class="menu-item-action" data-action="show-problems">
+                <i class="fas fa-exclamation-triangle"></i> Problems <span class="shortcut">Ctrl+Shift+M</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="toggle-zen">
+                <i class="fas fa-expand"></i> Zen Mode <span class="shortcut">Ctrl+K Z</span>
+            </div>
+            <div class="menu-item-action" data-action="toggle-fullscreen">
+                <i class="fas fa-expand-arrows-alt"></i> Full Screen <span class="shortcut">F11</span>
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="ghostMenu">
+            <div class="menu-header"><i class="fas fa-ghost"></i> Ghost</div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="ghost-build">
+                <i class="fas fa-hammer"></i> Build Project <span class="shortcut">Ctrl+Shift+B</span>
+            </div>
+            <div class="menu-item-action" data-action="ghost-run">
+                <i class="fas fa-play"></i> Run on Host VM <span class="shortcut">F5</span>
+            </div>
+            <div class="menu-item-action" data-action="ghost-flash">
+                <i class="fas fa-microchip"></i> Flash to Device <span class="shortcut">Ctrl+F</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="ghost-check">
+                <i class="fas fa-check-circle"></i> Check Syntax <span class="shortcut">Ctrl+Shift+C</span>
+            </div>
+            <div class="menu-item-action" data-action="ghost-format">
+                <i class="fas fa-align-left"></i> Format Document <span class="shortcut">Shift+Alt+F</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-section-title">Code Generation</div>
+            <div class="menu-item-action" data-action="ghost-tokens">
+                <i class="fas fa-list"></i> Show Tokens
+            </div>
+            <div class="menu-item-action" data-action="ghost-ast">
+                <i class="fas fa-sitemap"></i> Show AST
+            </div>
+            <div class="menu-item-action" data-action="ghost-ir">
+                <i class="fas fa-code"></i> Show IR
+            </div>
+            <div class="menu-item-action" data-action="ghost-llvm">
+                <i class="fas fa-cube"></i> Show LLVM IR
+            </div>
+            <div class="menu-item-action" data-action="ghost-c">
+                <i class="fas fa-file-code"></i> Show C Code
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="ghost-serial">
+                <i class="fas fa-plug"></i> Serial Monitor <span class="shortcut">Ctrl+Shift+M</span>
+            </div>
+            <div class="menu-item-action" data-action="ghost-target">
+                <i class="fas fa-microchip"></i> Select Target...
+            </div>
+            <div class="menu-item-action" data-action="ghost-compiler-settings">
+                <i class="fas fa-cog"></i> Compiler Settings...
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="terminalMenu">
+            <div class="menu-header">Terminal</div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="terminal-new">
+                <i class="fas fa-plus"></i> New Terminal <span class="shortcut">Ctrl+Shift+`</span>
+            </div>
+            <div class="menu-item-action" data-action="terminal-split">
+                <i class="fas fa-columns"></i> Split Terminal <span class="shortcut">Ctrl+Shift+5</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="terminal-run-task">
+                <i class="fas fa-play-circle"></i> Run Task...
+            </div>
+            <div class="menu-item-action" data-action="terminal-configure">
+                <i class="fas fa-cog"></i> Configure Tasks...
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="helpMenu">
+            <div class="menu-header">Help</div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="help-welcome">
+                <i class="fas fa-hand-wave"></i> Welcome
+            </div>
+            <div class="menu-item-action" data-action="help-docs">
+                <i class="fas fa-book"></i> Documentation
+            </div>
+            <div class="menu-item-action" data-action="help-api">
+                <i class="fas fa-code"></i> API Reference
+            </div>
+            <div class="menu-item-action" data-action="help-examples">
+                <i class="fas fa-file-code"></i> Examples
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="help-keybindings">
+                <i class="fas fa-keyboard"></i> Keyboard Shortcuts
+            </div>
+            <div class="menu-item-action" data-action="check-updates">
+                <i class="fas fa-download"></i> Check for Updates
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item-action" data-action="show-about">
+                <i class="fas fa-info-circle"></i> About Ghost IDE
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-title" id="sidebarTitle">
+                        <i class="fas fa-file-alt"></i> Explorer
+                    </div>
+                    <div class="sidebar-actions">
+                        <button class="sidebar-btn" id="collapseSidebar" title="Collapse Sidebar (Ctrl+B)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active" data-tab="explorer">
+                        <i class="fas fa-folder"></i> Files
+                    </button>
+                    <button class="sidebar-tab" data-tab="search">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <button class="sidebar-tab" data-tab="git">
+                        <i class="fab fa-git-alt"></i> Git
+                    </button>
+                    <button class="sidebar-tab" data-tab="debug">
+                        <i class="fas fa-bug"></i> Debug
+                    </button>
+                    <button class="sidebar-tab" data-tab="extensions">
+                        <i class="fas fa-puzzle-piece"></i> Extensions
+                    </button>
+                </div>
+                <div class="sidebar-content">
+                    <!-- Explorer Tab -->
+                    <div class="tab-panel active" id="explorerPanel">
+                        <div class="explorer-toolbar">
+                            <button class="tool-btn" id="newFileBtn" title="New File">
+                                <i class="fas fa-file"></i>
+                            </button>
+                            <button class="tool-btn" id="newFolderBtn" title="New Folder">
+                                <i class="fas fa-folder-plus"></i>
+                            </button>
+                            <button class="tool-btn" id="refreshExplorerBtn" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="tool-btn" id="collapseAllBtn" title="Collapse All">
+                                <i class="fas fa-compress"></i>
+                            </button>
+                        </div>
+                        <div class="file-tree" id="fileTree"></div>
+                    </div>
+                    <!-- Search Tab -->
+                    <div class="tab-panel" id="searchPanel">
+                        <div class="search-input-group">
+                            <input type="text" id="searchInput" placeholder="Search in files...">
+                            <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i></button>
+                        </div>
+                        <div class="search-options">
+                            <label><input type="checkbox" id="searchCase"> Match Case</label>
+                            <label><input type="checkbox" id="searchWord"> Whole Word</label>
+                            <label><input type="checkbox" id="searchRegex"> Regex</label>
+                        </div>
+                        <div class="search-results" id="searchResults"></div>
+                    </div>
+                    <!-- Git Tab -->
+                    <div class="tab-panel" id="gitPanel">
+                        <div class="git-toolbar">
+                            <button class="tool-btn" id="gitRefreshBtn" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="tool-btn" id="gitCommitBtn" title="Commit">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="tool-btn" id="gitPushBtn" title="Push">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                            <button class="tool-btn" id="gitPullBtn" title="Pull">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                        </div>
+                        <div class="git-status" id="gitStatus"></div>
+                    </div>
+                    <!-- Debug Tab -->
+                    <div class="tab-panel" id="debugPanel">
+                        <div class="debug-toolbar">
+                            <button class="tool-btn" id="debugStartBtn" title="Start Debugging">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="tool-btn" id="debugStopBtn" title="Stop Debugging" disabled>
+                                <i class="fas fa-stop"></i>
+                            </button>
+                            <button class="tool-btn" id="debugRestartBtn" title="Restart Debugging" disabled>
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button class="tool-btn" id="debugPauseBtn" title="Pause" disabled>
+                                <i class="fas fa-pause"></i>
+                            </button>
+                        </div>
+                        <div class="debug-sections">
+                            <div class="debug-section">
+                                <h4>Variables</h4>
+                                <div id="debugVariables"></div>
+                            </div>
+                            <div class="debug-section">
+                                <h4>Watch</h4>
+                                <div id="debugWatch"></div>
+                            </div>
+                            <div class="debug-section">
+                                <h4>Call Stack</h4>
+                                <div id="debugCallStack"></div>
+                            </div>
+                            <div class="debug-section">
+                                <h4>Breakpoints</h4>
+                                <div id="debugBreakpoints"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Extensions Tab -->
+                    <div class="tab-panel" id="extensionsPanel">
+                        <div class="extensions-toolbar">
+                            <input type="text" id="extSearchInput" placeholder="Search extensions...">
+                            <button class="tool-btn" id="extRefreshBtn" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="extensions-list" id="extensionsList"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="sidebar-resizer" id="sidebarResizer"></div>
+
+            <!-- Editor Area -->
+            <main class="editor-area" id="editorArea">
+                <div class="editor-tabs" id="editorTabs"></div>
+                <div class="editor-container" id="editorContainer">
+                    <!-- Editor instances will be created here -->
+                </div>
+            </main>
+
+            <div class="panel-resizer" id="panelResizer"></div>
+
+            <!-- Bottom Panel -->
+            <aside class="bottom-panel" id="bottomPanel">
+                <div class="panel-header">
+                    <div class="panel-tabs" id="panelTabs">
+                        <button class="panel-tab active" data-panel="problems">
+                            <i class="fas fa-exclamation-triangle"></i> Problems
+                        </button>
+                        <button class="panel-tab" data-panel="output">
+                            <i class="fas fa-terminal"></i> Output
+                        </button>
+                        <button class="panel-tab" data-panel="terminal">
+                            <i class="fas fa-terminal"></i> Terminal
+                        </button>
+                        <button class="panel-tab" data-panel="serial">
+                            <i class="fas fa-plug"></i> Serial
+                        </button>
+                        <button class="panel-tab" data-panel="ghost-output">
+                            <i class="fas fa-ghost"></i> Ghost
+                        </button>
+                    </div>
+                    <div class="panel-actions">
+                        <button class="panel-btn" id="clearOutputBtn" title="Clear Output">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="panel-btn" id="closePanelBtn" title="Close Panel (Ctrl+J)">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <!-- Problems Panel -->
+                    <div class="panel-tab-content active" id="problemsPanel">
+                        <div class="problems-toolbar">
+                            <select id="problemsFilter">
+                                <option value="all">All</option>
+                                <option value="errors">Errors</option>
+                                <option value="warnings">Warnings</option>
+                                <option value="info">Info</option>
+                            </select>
+                        </div>
+                        <div class="problems-list" id="problemsList"></div>
+                    </div>
+                    <!-- Output Panel -->
+                    <div class="panel-tab-content" id="outputPanel">
+                        <div class="output-toolbar">
+                            <select id="outputChannel">
+                                <option value="ghost">Ghost Compiler</option>
+                                <option value="tasks">Tasks</option>
+                                <option value="build">Build</option>
+                            </select>
+                        </div>
+                        <div class="output-console" id="outputConsole"></div>
+                    </div>
+                    <!-- Terminal Panel -->
+                    <div class="panel-tab-content" id="terminalPanel">
+                        <div class="terminal-toolbar">
+                            <div class="terminal-tabs" id="terminalTabs">
+                                <button class="terminal-tab active" data-terminal="1">
+                                    <i class="fas fa-terminal"></i> Terminal 1
+                                    <button class="close-tab" data-terminal="1"><i class="fas fa-times"></i></button>
+                                </button>
+                                <button class="terminal-tab new-terminal" id="newTerminalBtn">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="terminal-actions">
+                                <button class="tool-btn" id="terminalKillBtn" title="Kill Terminal">
+                                    <i class="fas fa-skull-crossbones"></i>
+                                </button>
+                                <button class="tool-btn" id="terminalClearBtn" title="Clear Terminal">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="terminal-container" id="terminalContainer">
+                            <div class="terminal-instance active" id="terminal1"></div>
+                        </div>
+                    </div>
+                    <!-- Serial Monitor Panel -->
+                    <div class="panel-tab-content" id="serialPanel">
+                        <div class="serial-toolbar">
+                            <select id="serialPortSelect" title="Select Port">
+                                <option value="">Select Port...</option>
+                            </select>
+                            <select id="serialBaudSelect" title="Baud Rate">
+                                <option value="9600">9600</option>
+                                <option value="19200">19200</option>
+                                <option value="38400">38400</option>
+                                <option value="57600">57600</option>
+                                <option value="115200" selected>115200</option>
+                                <option value="230400">230400</option>
+                                <option value="460800">460800</option>
+                                <option value="921600">921600</option>
+                            </select>
+                            <button class="tool-btn" id="serialRefreshBtn" title="Refresh Ports">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="tool-btn" id="serialConnectBtn" title="Connect">
+                                <i class="fas fa-plug"></i>
+                            </button>
+                            <button class="tool-btn" id="serialDisconnectBtn" title="Disconnect" disabled>
+                                <i class="fas fa-unlink"></i>
+                            </button>
+                            <button class="tool-btn" id="serialClearBtn" title="Clear">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <label class="serial-option">
+                                <input type="checkbox" id="serialTimestamp"> Timestamps
+                            </label>
+                            <label class="serial-option">
+                                <input type="checkbox" id="serialAutoScroll" checked> Auto-scroll
+                            </label>
+                        </div>
+                        <div class="serial-console" id="serialConsole"></div>
+                        <div class="serial-input-group">
+                            <input type="text" id="serialInput" placeholder="Type message to send..." disabled>
+                            <button class="send-btn" id="serialSendBtn" disabled><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                    <!-- Ghost Output Panel -->
+                    <div class="panel-tab-content" id="ghostOutputPanel">
+                        <div class="ghost-output-toolbar">
+                            <div class="ghost-status-bar">
+                                <span id="ghostCompilerStatus">Ready</span>
+                                <span class="separator">|</span>
+                                <span id="ghostTarget">Target: STM32F411</span>
+                                <span class="separator">|</span>
+                                <span id="ghostOptLevel">Opt: O2</span>
+                            </div>
+                            <div class="ghost-actions">
+                                <button class="tool-btn primary" id="ghostBuildBtn" title="Build (Ctrl+Shift+B)">
+                                    <i class="fas fa-hammer"></i> Build
+                                </button>
+                                <button class="tool-btn success" id="ghostRunBtn" title="Run on VM (F5)">
+                                    <i class="fas fa-play"></i> Run
+                                </button>
+                                <button class="tool-btn warning" id="ghostFlashBtn" title="Flash to Device (Ctrl+F)">
+                                    <i class="fas fa-microchip"></i> Flash
+                                </button>
+                                <button class="tool-btn" id="ghostCheckBtn" title="Check Syntax (Ctrl+Shift+C)">
+                                    <i class="fas fa-check-circle"></i> Check
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ghost-console" id="ghostConsole"></div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Status Bar -->
+        <footer class="status-bar" id="statusBar">
+            <div class="status-left">
+                <div class="status-item" id="gitStatus">
+                    <i class="fas fa-code-branch"></i> <span id="gitBranch">main</span>
+                </div>
+                <div class="status-item" id="syncStatus">
+                    <i class="fas fa-sync-alt"></i> <span id="syncIcon">⇡0 ⇣0</span>
+                </div>
+            </div>
+            <div class="status-center">
+                <div class="status-item" id="problemsSummary">
+                    <span id="errorCount" class="error-count">0</span> errors, 
+                    <span id="warningCount" class="warning-count">0</span> warnings
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="status-item" id="cursorPosition">
+                    <i class="fas fa-mouse-pointer"></i> Ln 1, Col 1
+                </div>
+                <div class="status-item" id="fileEncoding">
+                    <i class="fas fa-file-code"></i> UTF-8
+                </div>
+                <div class="status-item" id="lineEnding">
+                    <i class="fas fa-paragraph"></i> LF
+                </div>
+                <div class="status-item" id="languageMode">
+                    <i class="fas fa-code"></i> <span id="currentLanguage">Plain Text</span>
+                </div>
+                <div class="status-item" id="indentStyle">
+                    <i class="fas fa-indent"></i> Spaces: 4
+                </div>
+                <div class="status-item" id="ghostMode">
+                    <i class="fas fa-ghost"></i> <span id="ghostModeText">Ghost v0.1</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Welcome Screen Modal -->
+    <div class="modal" id="welcomeModal">
+        <div class="modal-content welcome-content">
+            <div class="welcome-header">
+                <i class="fas fa-ghost"></i>
+                <h1>Welcome to Ghost IDE</h1>
+                <p>Embedded AI Development Platform</p>
+            </div>
+            <div class="welcome-actions">
+                <button class="welcome-btn primary" id="welcomeNewProject">
+                    <i class="fas fa-project-diagram"></i>
+                    <div>
+                        <strong>New Project</strong>
+                        <span>Create a new Ghost project</span>
+                    </div>
+                </button>
+                <button class="welcome-btn" id="welcomeOpenProject">
+                    <i class="fas fa-folder-open"></i>
+                    <div>
+                        <strong>Open Project</strong>
+                        <span>Open an existing Ghost project</span>
+                    </div>
+                </button>
+                <button class="welcome-btn" id="welcomeOpenFolder">
+                    <i class="fas fa-folder"></i>
+                    <div>
+                        <strong>Open Folder</strong>
+                        <span>Open a folder as workspace</span>
+                    </div>
+                </button>
+                <button class="welcome-btn" id="welcomeNewFile">
+                    <i class="fas fa-file"></i>
+                    <div>
+                        <strong>New File</strong>
+                        <span>Create a new Ghost file</span>
+                    </div>
+                </button>
+            </div>
+            <div class="welcome-recent">
+                <h3>Recent Projects</h3>
+                <div class="recent-list" id="welcomeRecentList"></div>
+            </div>
+            <div class="welcome-footer">
+                <a href="#" id="welcomeDocs">Documentation</a>
+                <a href="#" id="welcomeAPI">API Reference</a>
+                <a href="#" id="welcomeExamples">Examples</a>
+                <a href="#" id="welcomeKeyboard">Keyboard Shortcuts</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-cog"></i> Settings</h2>
+                <button class="modal-close" id="settingsCloseBtn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="settings-tabs">
+                <button class="settings-tab active" data-tab="general">General</button>
+                <button class="settings-tab" data-tab="editor">Editor</button>
+                <button class="settings-tab" data-tab="ghost">Ghost</button>
+                <button class="settings-tab" data-tab="terminal">Terminal</button>
+                <button class="settings-tab" data-tab="serial">Serial</button>
+                <button class="settings-tab" data-tab="keyboard">Keyboard</button>
+            </div>
+            <div class="settings-panels">
+                <div class="settings-panel active" id="generalSettings">
+                    <h3>General</h3>
+                    <div class="setting-group">
+                        <label>Theme</label>
+                        <select id="themeSelect">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                            <option value="high-contrast">High Contrast</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>Language</label>
+                        <select id="languageSelect">
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="autoSave" checked> Auto Save
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="restoreSession" checked> Restore Session on Startup
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="checkUpdates" checked> Check for Updates
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="telemetry" checked> Send Usage Data
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-panel" id="editorSettings">
+                    <h3>Editor</h3>
+                    <div class="setting-group">
+                        <label>Font Size</label>
+                        <input type="range" id="fontSizeRange" min="10" max="24" value="14">
+                        <span id="fontSizeValue">14px</span>
+                    </div>
+                    <div class="setting-group">
+                        <label>Font Family</label>
+                        <input type="text" id="fontFamilyInput" value="'JetBrains Mono', 'Fira Code', Consolas, monospace">
+                    </div>
+                    <div class="setting-group">
+                        <label>Tab Size</label>
+                        <select id="tabSizeSelect">
+                            <option value="2">2 spaces</option>
+                            <option value="4" selected>4 spaces</option>
+                            <option value="8">8 spaces</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="insertSpaces" checked> Insert Spaces
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="wordWrap" checked> Word Wrap
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="lineNumbers" checked> Line Numbers
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="minimap" checked> Minimap
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="bracketMatching" checked> Bracket Matching
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="autoClosingBrackets" checked> Auto Closing Brackets
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="folding" checked> Code Folding
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="renderWhitespace"> Render Whitespace
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-panel" id="ghostSettings">
+                    <h3>Ghost Compiler</h3>
+                    <div class="setting-group">
+                        <label>Ghost Compiler Path</label>
+                        <div class="path-input">
+                            <input type="text" id="ghostCompilerPath" value="ghc" placeholder="Path to ghc executable">
+                            <button class="tool-btn" id="browseCompilerBtn"><i class="fas fa-folder-open"></i></button>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <label>Default Target</label>
+                        <select id="defaultTargetSelect">
+                            <option value="stm32f411">STM32F411 (Cortex-M4)</option>
+                            <option value="esp32s3">ESP32-S3 (Xtensa LX7)</option>
+                            <option value="esp32">ESP32 (Xtensa LX6)</option>
+                            <option value="esp32c3">ESP32-C3 (RISC-V)</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>Default Optimization Level</label>
+                        <select id="defaultOptLevel">
+                            <option value="0">O0 - No optimization</option>
+                            <option value="1">O1 - Optimize</option>
+                            <option value="2" selected>O2 - Optimize more</option>
+                            <option value="3">O3 - Optimize most</option>
+                            <option value="s">Os - Optimize for size</option>
+                            <option value="z">Oz - Optimize for size (aggressive)</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="ghostAutoBuild" checked> Auto Build on Save
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="ghostShowOutput" checked> Show Output on Build
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="ghostParallelBuild" checked> Parallel Build
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>Additional Compiler Args</label>
+                        <textarea id="ghostExtraArgs" rows="3" placeholder="--emit-llvm --verbose"></textarea>
+                    </div>
+                </div>
+                <div class="settings-panel" id="terminalSettings">
+                    <h3>Terminal</h3>
+                    <div class="setting-group">
+                        <label>Default Shell</label>
+                        <input type="text" id="terminalShell" value="/bin/bash">
+                    </div>
+                    <div class="setting-group">
+                        <label>Font Size</label>
+                        <input type="range" id="termFontSizeRange" min="10" max="20" value="13">
+                        <span id="termFontSizeValue">13px</span>
+                    </div>
+                    <div class="setting-group">
+                        <label>Cursor Style</label>
+                        <select id="termCursorStyle">
+                            <option value="block">Block</option>
+                            <option value="underline">Underline</option>
+                            <option value="bar">Bar</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="termCursorBlink" checked> Cursor Blink
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>Scrollback Lines</label>
+                        <input type="number" id="termScrollback" value="10000" min="1000">
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="termRightClickSelectsWord" checked> Right Click Selects Word
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="termFastScroll" checked> Fast Scroll
+                        </label>
+                    </div>
+                </div>
+                <div class="settings-panel" id="serialSettings">
+                    <h3>Serial Monitor</h3>
+                    <div class="setting-group">
+                        <label>Default Baud Rate</label>
+                        <select id="defaultBaudSelect">
+                            <option value="9600">9600</option>
+                            <option value="19200">19200</option>
+                            <option value="38400">38400</option>
+                            <option value="57600">57600</option>
+                            <option value="115200" selected>115200</option>
+                            <option value="230400">230400</option>
+                            <option value="460800">460800</option>
+                            <option value="921600">921600</option>
+                        </select>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="serialAutoConnect" checked> Auto-connect on Startup
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="serialShowTimestamps" checked> Show Timestamps
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>
+                            <input type="checkbox" id="serialLogToFile"> Log to File
+                        </label>
+                    </div>
+                    <div class="setting-group">
+                        <label>Log File Path</label>
+                        <input type="text" id="serialLogPath" placeholder="~/ghost-serial.log">
+                    </div>
+                </div>
+                <div class="settings-panel" id="keyboardSettings">
+                    <h3>Keyboard Shortcuts</h3>
+                    <div class="keybindings-search">
+                        <input type="text" id="keybindingSearch" placeholder="Search keybindings...">
+                    </div>
+                    <div class="keybindings-list" id="keybindingsList"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="settingsResetBtn">Reset to Defaults</button>
+                <button class="btn primary" id="settingsSaveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Project Modal -->
+    <div class="modal" id="newProjectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-project-diagram"></i> New Project</h2>
+                <button class="modal-close" id="newProjectCloseBtn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="form-group">
+                <label>Project Name</label>
+                <input type="text" id="projectNameInput" placeholder="my-ghost-project">
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <div class="path-input">
+                    <input type="text" id="projectLocationInput" readonly>
+                    <button class="tool-btn" id="browseLocationBtn"><i class="fas fa-folder-open"></i></button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Template</label>
+                <select id="projectTemplateSelect">
+                    <option value="blank">Blank</option>
+                    <option value="blink">Blink LED</option>
+                    <option value="sensor">Sensor Reading</option>
+                    <option value="edge-ai">Edge AI Inference</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Target Device</label>
+                <select id="projectTargetSelect">
+                    <option value="stm32f411">STM32F411 (Cortex-M4)</option>
+                    <option value="esp32s3">ESP32-S3 (Xtensa LX7)</option>
+                    <option value="esp32">ESP32 (Xtensa LX6)</option>
+                    <option value="esp32c3">ESP32-C3 (RISC-V)</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="newProjectCancelBtn">Cancel</button>
+                <button class="btn primary" id="newProjectCreateBtn">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command Palette -->
+    <div class="command-palette" id="commandPalette">
+        <div class="palette-input-group">
+            <i class="fas fa-search"></i>
+            <input type="text" id="paletteInput" placeholder="Type a command...">
+            <span class="palette-hint">Ctrl+Shift+P</span>
+        </div>
+        <div class="palette-results" id="paletteResults"></div>
+    </div>
+
+    <!-- Context Menus -->
+    <div class="context-menu" id="fileTreeContextMenu">
+        <div class="context-menu-item" data-action="new-file"><i class="fas fa-file"></i> New File</div>
+        <div class="context-menu-item" data-action="new-folder"><i class="fas fa-folder-plus"></i> New Folder</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="rename"><i class="fas fa-edit"></i> Rename</div>
+        <div class="context-menu-item" data-action="delete"><i class="fas fa-trash"></i> Delete</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="copy-path"><i class="fas fa-copy"></i> Copy Path</div>
+        <div class="context-menu-item" data-action="reveal-in-explorer"><i class="fas fa-external-link-alt"></i> Reveal in Explorer</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="open-terminal"><i class="fas fa-terminal"></i> Open in Terminal</div>
+    </div>
+
+    <div class="context-menu" id="editorContextMenu">
+        <div class="context-menu-item" data-action="undo"><i class="fas fa-undo"></i> Undo</div>
+        <div class="context-menu-item" data-action="redo"><i class="fas fa-redo"></i> Redo</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="cut"><i class="fas fa-cut"></i> Cut</div>
+        <div class="context-menu-item" data-action="copy"><i class="fas fa-copy"></i> Copy</div>
+        <div class="context-menu-item" data-action="paste"><i class="fas fa-paste"></i> Paste</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="format"><i class="fas fa-align-left"></i> Format Document</div>
+        <div class="context-menu-item" data-action="toggle-comment"><i class="fas fa-comment-slash"></i> Toggle Comment</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="go-to-definition"><i class="fas fa-arrow-right"></i> Go to Definition</div>
+        <div class="context-menu-item" data-action="find-references"><i class="fas fa-search"></i> Find References</div>
+    </div>
+
+    <div class="context-menu" id="tabContextMenu">
+        <div class="context-menu-item" data-action="close-tab"><i class="fas fa-times"></i> Close</div>
+        <div class="context-menu-item" data-action="close-others"><i class="fas fa-times-circle"></i> Close Others</div>
+        <div class="context-menu-item" data-action="close-right"><i class="fas fa-angle-double-right"></i> Close to the Right</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="split-right"><i class="fas fa-columns"></i> Split Right</div>
+        <div class="context-menu-item" data-action="split-down"><i class="fas fa-columns"></i> Split Down</div>
+        <div class="context-menu-divider"></div>
+        <div class="context-menu-item" data-action="copy-path"><i class="fas fa-copy"></i> Copy Path</div>
+        <div class="context-menu-item" data-action="reveal-in-explorer"><i class="fas fa-folder-open"></i> Reveal in Explorer</div>
+    </div>
+
+    <!-- About Modal -->
+    <div class="modal" id="aboutModal">
+        <div class="modal-content about-content">
+            <div class="about-header">
+                <i class="fas fa-ghost"></i>
+                <h1>Ghost IDE</h1>
+                <p class="version">Version 0.1.0</p>
+            </div>
+            <p class="about-description">Embedded AI Development Platform with Ghost Language Support</p>
+            <div class="about-features">
+                <div class="feature"><i class="fas fa-code"></i> Ghost Language v0.1 Support</div>
+                <div class="feature"><i class="fas fa-microchip"></i> STM32, ESP32, RISC-V Targets</div>
+                <div class="feature"><i class="fas fa-brain"></i> Built-in Plasticity (AI Learning)</div>
+                <div class="feature"><i class="fas fa-terminal"></i> Integrated Serial Monitor</div>
+                <div class="feature"><i class="fas fa-cube"></i> LLVM/C Code Generation</div>
+                <div class="feature"><i class="fas fa-play"></i> Host VM for Testing</div>
+            </div>
+            <div class="about-links">
+                <a href="#" id="aboutGitHub"><i class="fab fa-github"></i> GitHub</a>
+                <a href="#" id="aboutDocs"><i class="fas fa-book"></i> Documentation</a>
+                <a href="#" id="aboutLicense"><i class="fas fa-file-contract"></i> License</a>
+            </div>
+            <div class="modal-footer">
+                <button class="btn primary" id="aboutCloseBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/clike/clike.min.js"></>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/foldcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/foldgutter.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/brace-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/fold/indent-fold.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/comment/comment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/display/placeholder.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/search/searchcursor.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/search/jump-to-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/lint/lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/addon/lint/javascript-lint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/5.3.0/xterm.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm-addon-fit/0.8.0/xterm-addon-fit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm-addon-web-links/0.9.0/xterm-addon-web-links.min.js"></script>
+    <script src="./ghost-mode.js"></script>
+    <script src="./editor.js"></script>
+    <script src="./filetree.js"></script>
+    <script src="./terminal.js"></script>
+    <script src="./serial.js"></script>
+    <script src="./ui.js"></script>
+    <script src="./main.js"></script>
+</body>
+</html>

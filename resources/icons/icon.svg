@@ -1,0 +1,97 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ghostGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c586c0;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#9cdcfe;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ec9b0;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1e1e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#252526;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#bgGradient)"/>
+  
+  <!-- Ghost body -->
+  <path d="M256 100 
+           C170 100 100 170 100 256 
+           V380 
+           C100 420 130 450 170 450 
+           L170 470 
+           C170 490 185 510 205 510 
+           H307 
+           C327 510 342 490 342 470 
+           L342 450 
+           C382 450 412 420 412 380 
+           V256 
+           C412 170 342 100 256 100 Z" 
+        fill="url(#ghostGradient)" 
+        filter="url(#glow)"/>
+  
+  <!-- Ghost inner highlight -->
+  <path d="M256 130 
+           C200 130 156 174 156 230 
+           V350 
+           C156 380 180 400 210 400 
+           L210 420 
+           C210 435 222 450 237 450 
+           H275 
+           C290 450 302 435 302 420 
+           L302 400 
+           C332 400 356 380 356 350 
+           V230 
+           C356 174 312 130 256 130 Z" 
+        fill="rgba(255,255,255,0.15)"/>
+  
+  <!-- Eyes -->
+  <ellipse cx="190" cy="230" rx="30" ry="35" fill="#1e1e1e" filter="url(#glow)"/>
+  <ellipse cx="322" cy="230" rx="30" ry="35" fill="#1e1e1e" filter="url(#glow)"/>
+  
+  <!-- Eye highlights -->
+  <ellipse cx="185" cy="220" rx="8" ry="10" fill="rgba(255,255,255,0.9)"/>
+  <ellipse cx="317" cy="220" rx="8" ry="10" fill="rgba(255,255,255,0.9)"/>
+  
+  <!-- Pupils -->
+  <ellipse cx="190" cy="235" rx="12" ry="15" fill="#c586c0"/>
+  <ellipse cx="322" cy="235" rx="12" ry="15" fill="#4ec9b0"/>
+  
+  <!-- Pupil highlights -->
+  <circle cx="188" cy="230" r="3" fill="rgba(255,255,255,0.8)"/>
+  <circle cx="320" cy="230" r="3" fill="rgba(255,255,255,0.8)"/>
+  
+  <!-- Circuit pattern on ghost body -->
+  <g stroke="#9cdcfe" stroke-width="2" fill="none" opacity="0.6">
+    <!-- Circuit lines -->
+    <path d="M180 280 L230 280 M205 260 L205 300"/>
+    <path d="M282 280 L332 280 M307 260 L307 300"/>
+    <path d="M200 330 L240 330 M220 310 L220 350"/>
+    <path d="M272 330 L312 330 M292 310 L292 350"/>
+    <path d="M160 350 L190 350 M175 330 L175 370"/>
+    <path d="M322 350 L352 350 M337 330 L337 370"/>
+    <!-- Small circuit nodes -->
+    <circle cx="205" cy="280" r="4" fill="#c586c0"/>
+    <circle cx="307" cy="280" r="4" fill="#4ec9b0"/>
+    <circle cx="220" cy="330" r="4" fill="#c586c0"/>
+    <circle cx="292" cy="330" r="4" fill="#4ec9b0"/>
+    <circle cx="175" cy="350" r="4" fill="#9cdcfe"/>
+    <circle cx="337" cy="350" r="4" fill="#9cdcfe"/>
+  </g>
+  
+  <!-- Tensor symbol (small) on bottom -->
+  <g transform="translate(256, 400) scale(0.8)">
+    <rect x="-30" y="-10" width="60" height="20" rx="4" fill="rgba(78,201,176,0.3)" stroke="#4ec9b0" stroke-width="2"/>
+    <text x="0" y="4" text-anchor="middle" fill="#4ec9b0" font-family="monospace" font-size="14" font-weight="bold">tensor</text>
+  </g>
+  
+  <!-- Subtle "AI" text at bottom -->
+  <text x="256" y="475" text-anchor="middle" fill="rgba(156,220,254,0.6)" font-family="monospace" font-size="18" font-weight="bold" letter-spacing="4">EMBEDDED AI</text>
+</svg>

@@ -1,0 +1,21 @@
+{
+  "name": "tree-sitter-ghost",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for Ghost programming language",
+  "main": "index.js",
+  "scripts": {
+    "build": "node-gyp build",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "tree-sitter",
+    "ghost",
+    "programming-language"
+  ],
+  "author": "Cyborg",
+  "license": "MIT",
+  "dependencies": {
+    "node-gyp": "^10.0.0",
+    "tree-sitter": "^0.21.0"
+  }
+}
