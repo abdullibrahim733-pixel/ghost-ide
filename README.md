@@ -11,8 +11,8 @@ Ghost IDE is a comprehensive Integrated Development Environment for the Ghost pr
 - **Edge AI Integration** - Built-in tensor operations, model inference, plasticity (reward/punish/mutate)
 - **Serial Monitor** - Real-time device communication with timestamps and logging
 - **Integrated Terminal** - Multiple terminal instances with xterm.js
-- **Git Integration** - Source control built-in
-- **Debug Support** - Breakpoints, variables, call stack
+- **Git Integration** - Planned (the source-control panel is UI-only; no Git commands are wired up yet)
+- **Debug Support** - Planned (breakpoints/variables/call stack panels are placeholders; no debugger is attached)
 - **Cross-platform** - Windows, macOS, Linux
 
 ## Quick Start
